@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Navigation from '@/components/Navigation'
-import InteractivePhotoMap from '@/components/InteractivePhotoMap'
+
+// Dynamically import InteractivePhotoMap to avoid SSR issues
+const InteractivePhotoMap = dynamic(() => import('@/components/InteractivePhotoMap'), { ssr: false })
 
 export default function Photos() {
   const [isPhotoViewMode, setIsPhotoViewMode] = useState(false)

@@ -48,7 +48,7 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
         console.log('Map reference available:', mapRef.current);
         
         // Check if mapkit global is available
-        if (typeof mapkit !== 'undefined') {
+        if (typeof window !== 'undefined' && typeof mapkit !== 'undefined') {
           const coordinate = new mapkit.Coordinate(location.latitude, location.longitude);
           const span = new mapkit.CoordinateSpan(0.005, 0.005);
           const region = new mapkit.CoordinateRegion(coordinate, span);
