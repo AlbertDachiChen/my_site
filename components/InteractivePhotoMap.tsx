@@ -12,11 +12,13 @@ const MAPKIT_JS_TOKEN = process.env.NEXT_PUBLIC_MAPKIT_JS_TOKEN || 'YOUR_MAPKIT_
 
 interface InteractivePhotoMapProps {
   className?: string;
+  onPhotoViewModeChange?: (isPhotoMode: boolean) => void;
 }
 
-export default function InteractivePhotoMap({ className }: InteractivePhotoMapProps) {
+export default function InteractivePhotoMap({ className, onPhotoViewModeChange }: InteractivePhotoMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<PhotoLocation | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [mapCenter, setMapCenter] = useState({
     centerLatitude: 40.7829,
     centerLongitude: -74.0059,
@@ -24,6 +26,7 @@ export default function InteractivePhotoMap({ className }: InteractivePhotoMapPr
     longitudeDelta: 50,
   });
   const mapRef = useRef<any>(null);
+  const photoScrollRef = useRef<HTMLDivElement>(null);
 
   const handleMarkerClick = (location: PhotoLocation) => {
     console.log('Zooming to location:', location.name);
@@ -80,12 +83,16 @@ export default function InteractivePhotoMap({ className }: InteractivePhotoMapPr
     setTimeout(() => {
       setSelectedLocation(location);
       setIsModalOpen(true);
+      // Notify parent component to hide navigation
+      onPhotoViewModeChange?.(true);
     }, 1000); // Slightly longer delay
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedLocation(null);
+    // Notify parent component to show navigation again
+    onPhotoViewModeChange?.(false);
     
     // Optional: Zoom back out when closing modal
     setTimeout(() => {
@@ -129,11 +136,117 @@ export default function InteractivePhotoMap({ className }: InteractivePhotoMapPr
 
   return (
     <div className={className}>
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Map Container */}
-        <div className={`relative h-96 md:h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-lg transition-all duration-500 ${
-          isModalOpen ? 'lg:w-1/2' : 'w-full'
-        }`}>
+      {isModalOpen ? (
+        /* Photo Viewing Mode - Map in top-left, photos take main space */
+        <div className="relative min-h-screen bg-black">
+          {/* Small Map in Top Left - Hidden on mobile */}
+          <div className="absolute top-0 left-0 w-80 h-64 rounded-2xl overflow-hidden shadow-lg z-10 transition-all duration-700 ease-out hidden lg:block">
+            <Map
+              ref={mapRef}
+              token={MAPKIT_JS_TOKEN}
+              initialRegion={{
+                centerLatitude: 40.7829,
+                centerLongitude: -74.0059,
+                latitudeDelta: 50,
+                longitudeDelta: 50,
+              }}
+              onMapReady={(map) => {
+                mapRef.current = map;
+                console.log('Map ready:', map);
+                
+                // Add event listeners for marker clicks using MapKit JS directly
+                map.addEventListener('select', (event) => {
+                  console.log('Map select event:', event);
+                  if (event.target && event.target.coordinate) {
+                    const clickedCoord = event.target.coordinate;
+                    console.log('Clicked coordinate:', clickedCoord);
+                    
+                    // Find the location that matches this coordinate
+                    const matchedLocation = photoLocations.find(location => 
+                      Math.abs(location.latitude - clickedCoord.latitude) < 0.001 &&
+                      Math.abs(location.longitude - clickedCoord.longitude) < 0.001
+                    );
+                    
+                    if (matchedLocation) {
+                      console.log('Found matching location:', matchedLocation.name);
+                      handleMarkerClick(matchedLocation);
+                    }
+                  }
+                });
+              }}
+              className="w-full h-full"
+            >
+              {photoLocations.map((location) => (
+                <Marker
+                  key={location.id}
+                  latitude={location.latitude}
+                  longitude={location.longitude}
+                  onSelect={() => {
+                    console.log('Marker onSelect fired!');
+                    handleMarkerClick(location);
+                  }}
+                  onClick={() => {
+                    console.log('Marker onClick fired!');
+                    handleMarkerClick(location);
+                  }}
+                  color={selectedLocation?.id === location.id ? "orange" : "red"}
+                  size="small"
+                  glyphColor="transparent"
+                />
+              ))}
+            </Map>
+          </div>
+
+          {/* Close Button */}
+          <div className="absolute top-4 right-4 z-20">
+            <button
+              onClick={handleCloseModal}
+              className="p-3 bg-white hover:bg-gray-100 rounded-full shadow-lg transition-colors text-claude-text"
+            >
+              <FaTimes className="text-xl" />
+            </button>
+          </div>
+
+          {/* Photo Viewing Area */}
+          <div 
+            ref={photoScrollRef}
+            className="pl-0 lg:pl-96 pt-0 min-h-screen overflow-y-auto"
+            onScroll={(e) => {
+              // Handle scroll to update current photo and map marker
+              const scrollContainer = e.currentTarget;
+              const photos = selectedLocation?.photos || [];
+              if (photos.length > 1) {
+                const scrollTop = scrollContainer.scrollTop;
+                const containerHeight = scrollContainer.clientHeight;
+                const newIndex = Math.floor(scrollTop / containerHeight);
+                const clampedIndex = Math.max(0, Math.min(newIndex, photos.length - 1));
+                if (clampedIndex !== currentPhotoIndex) {
+                  setCurrentPhotoIndex(clampedIndex);
+                }
+              }
+            }}
+          >
+            {selectedLocation?.photos.map((photo, index) => (
+              <div key={photo.id} className="h-screen flex items-center justify-center p-8">
+                <div className="max-w-4xl w-full h-full flex items-center justify-center">
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" font-size="16" fill="%236b7280">Photo not available</text></svg>';
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* Default Mode - Full Map */
+        <div className="w-full">
+          {/* Map Container */}
+          <div className="relative h-96 md:h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-lg transition-all duration-500">
         <Map
           ref={mapRef}
           token={MAPKIT_JS_TOKEN}
@@ -188,40 +301,9 @@ export default function InteractivePhotoMap({ className }: InteractivePhotoMapPr
             />
           ))}
         </Map>
-
-        </div>
-
-        {/* Photo Panel - Now part of the natural flow */}
-        {isModalOpen && selectedLocation && (
-          <div className="lg:w-1/2 bg-white rounded-2xl shadow-lg p-6 transition-all duration-500">
-            <div className="h-full flex flex-col">
-              {/* Close button */}
-              <div className="flex justify-end mb-4">
-                <button
-                  onClick={handleCloseModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-claude-text"
-                >
-                  <FaTimes className="text-xl" />
-                </button>
-              </div>
-              
-              {/* Photo Display */}
-              <div className="flex-1 relative bg-gray-50 rounded-xl overflow-hidden">
-                <div className="relative h-full flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
-                  <img
-                    src={selectedLocation.photos[0].src}
-                    alt={selectedLocation.photos[0].alt}
-                    className="max-w-full max-h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" font-size="16" fill="%236b7280">Photo not available</text></svg>';
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
     </div>
   );

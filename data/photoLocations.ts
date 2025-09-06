@@ -34,6 +34,22 @@ export const photoLocations: PhotoLocation[] = [
         title: "Greene Street SoHo",
         description: "Classic cast-iron buildings and cobblestone streets in New York's SoHo district",
         dateTaken: "2024-01-01" // Update with actual date taken
+      },
+      {
+        id: "soho-street-2",
+        src: "/images/nyc-soho/greene-street.jpg", // Duplicate for now - replace with actual photos
+        alt: "Second view of SoHo architecture",
+        title: "SoHo Architecture Detail",
+        description: "Another angle of the beautiful cast-iron facades",
+        dateTaken: "2024-01-01"
+      },
+      {
+        id: "soho-street-3",
+        src: "/images/nyc-soho/greene-street.jpg", // Duplicate for now - replace with actual photos
+        alt: "Third view of SoHo streets",
+        title: "SoHo Street Life",
+        description: "The vibrant street life in SoHo district",
+        dateTaken: "2024-01-01"
       }
     ]
   }
