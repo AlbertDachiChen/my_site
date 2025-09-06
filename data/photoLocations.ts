@@ -34,22 +34,24 @@ export const photoLocations: PhotoLocation[] = [
         title: "Greene Street SoHo",
         description: "Classic cast-iron buildings and cobblestone streets in New York's SoHo district",
         dateTaken: "2024-01-01" // Update with actual date taken
-      },
+      }
+    ]
+  },
+  {
+    id: "nyc-west-houston-st",
+    name: "West Houston Street, NYC",
+    latitude: 40.7278,
+    longitude: -74.0026,
+    visitDate: "2024-01-01", // Update with actual visit date
+    description: "Historic buildings and street views in lower Manhattan",
+    photos: [
       {
-        id: "soho-street-2",
-        src: "/images/nyc-soho/greene-street.jpg", // Duplicate for now - replace with actual photos
-        alt: "Second view of SoHo architecture",
-        title: "SoHo Architecture Detail",
-        description: "Another angle of the beautiful cast-iron facades",
-        dateTaken: "2024-01-01"
-      },
-      {
-        id: "soho-street-3",
-        src: "/images/nyc-soho/greene-street.jpg", // Duplicate for now - replace with actual photos
-        alt: "Third view of SoHo streets",
-        title: "SoHo Street Life",
-        description: "The vibrant street life in SoHo district",
-        dateTaken: "2024-01-01"
+        id: "w-houston-1",
+        src: "/images/nyc-soho/w-houston.jpg",
+        alt: "Street view of 88 W Houston Street in NYC",
+        title: "West Houston Street",
+        description: "Historic architecture along West Houston Street in New York City",
+        dateTaken: "2024-01-01" // Update with actual date taken
       }
     ]
   }

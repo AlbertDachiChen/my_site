@@ -19,6 +19,7 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
   const [selectedLocation, setSelectedLocation] = useState<PhotoLocation | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [sortedPhotos, setSortedPhotos] = useState<Array<{photo: any, location: PhotoLocation}>>([]);
   const [mapCenter, setMapCenter] = useState({
     centerLatitude: 40.7829,
     centerLongitude: -74.0059,
@@ -27,6 +28,43 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
   });
   const mapRef = useRef<any>(null);
   const photoScrollRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in kilometers
+  };
+
+  // Function to get all photos sorted by distance from clicked location
+  const getAllPhotosSortedByDistance = (clickedLocation: PhotoLocation) => {
+    const allPhotosWithLocation: Array<{photo: any, location: PhotoLocation}> = [];
+    
+    photoLocations.forEach(location => {
+      location.photos.forEach(photo => {
+        allPhotosWithLocation.push({ photo, location });
+      });
+    });
+
+    // Sort by distance from clicked location
+    return allPhotosWithLocation.sort((a, b) => {
+      const distanceA = calculateDistance(
+        clickedLocation.latitude, clickedLocation.longitude,
+        a.location.latitude, a.location.longitude
+      );
+      const distanceB = calculateDistance(
+        clickedLocation.latitude, clickedLocation.longitude,
+        b.location.latitude, b.location.longitude
+      );
+      return distanceA - distanceB;
+    });
+  };
 
   const handleMarkerClick = (location: PhotoLocation) => {
     console.log('Zooming to location:', location.name);
@@ -82,6 +120,10 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
     // Then show the modal after a brief delay to let the zoom animation happen
     setTimeout(() => {
       setSelectedLocation(location);
+      // Get all photos sorted by distance from clicked location
+      const sorted = getAllPhotosSortedByDistance(location);
+      setSortedPhotos(sorted);
+      setCurrentPhotoIndex(0);
       setIsModalOpen(true);
       // Notify parent component to hide navigation
       onPhotoViewModeChange?.(true);
@@ -139,17 +181,12 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
       {isModalOpen ? (
         /* Photo Viewing Mode - Map in top-left, photos take main space */
         <div className="relative min-h-screen bg-black">
-          {/* Small Map in Top Left - Hidden on mobile */}
-          <div className="absolute top-0 left-0 w-80 h-64 rounded-2xl overflow-hidden shadow-lg z-10 transition-all duration-700 ease-out hidden lg:block">
+          {/* Small Map in Top Left - Fixed position, hidden on mobile */}
+          <div className="fixed top-4 left-4 w-80 h-64 rounded-2xl overflow-hidden shadow-lg z-50 transition-all duration-700 ease-out hidden lg:block">
             <Map
               ref={mapRef}
               token={MAPKIT_JS_TOKEN}
-              initialRegion={{
-                centerLatitude: 40.7829,
-                centerLongitude: -74.0059,
-                latitudeDelta: 50,
-                longitudeDelta: 50,
-              }}
+              region={mapCenter}
               onMapReady={(map) => {
                 mapRef.current = map;
                 console.log('Map ready:', map);
@@ -189,7 +226,14 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                     console.log('Marker onClick fired!');
                     handleMarkerClick(location);
                   }}
-                  color={selectedLocation?.id === location.id ? "orange" : "red"}
+                  color={
+                    // Highlight the marker for the current photo being viewed
+                    sortedPhotos.length > 0 && sortedPhotos[currentPhotoIndex]?.location.id === location.id 
+                      ? "orange" 
+                      : selectedLocation?.id === location.id 
+                      ? "orange" 
+                      : "red"
+                  }
                   size="small"
                   glyphColor="transparent"
                 />
@@ -198,7 +242,7 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
           </div>
 
           {/* Close Button */}
-          <div className="absolute top-4 right-4 z-20">
+          <div className="fixed top-4 right-4 z-50">
             <button
               onClick={handleCloseModal}
               className="p-3 bg-white hover:bg-gray-100 rounded-full shadow-lg transition-colors text-claude-text"
@@ -210,28 +254,75 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
           {/* Photo Viewing Area */}
           <div 
             ref={photoScrollRef}
-            className="pl-0 lg:pl-96 pt-0 min-h-screen overflow-y-auto"
+            className="w-full h-screen overflow-y-auto"
+            style={{ scrollBehavior: 'smooth' }}
+            onWheel={(e) => {
+              console.log('🎡 WHEEL EVENT DETECTED!', e.deltaY);
+            }}
             onScroll={(e) => {
+              console.log('🔥 SCROLL EVENT DETECTED!'); // Simple test to see if scroll works at all
+              
               // Handle scroll to update current photo and map marker
               const scrollContainer = e.currentTarget;
-              const photos = selectedLocation?.photos || [];
-              if (photos.length > 1) {
-                const scrollTop = scrollContainer.scrollTop;
-                const containerHeight = scrollContainer.clientHeight;
-                const newIndex = Math.floor(scrollTop / containerHeight);
-                const clampedIndex = Math.max(0, Math.min(newIndex, photos.length - 1));
+              const scrollTop = scrollContainer.scrollTop;
+              const containerHeight = scrollContainer.clientHeight;
+              const scrollHeight = scrollContainer.scrollHeight;
+              
+              console.log('Scroll event:', {
+                scrollTop,
+                containerHeight,
+                scrollHeight,
+                totalPhotos: sortedPhotos.length,
+                currentIndex: currentPhotoIndex
+              });
+              
+              if (sortedPhotos.length > 0) {
+                // Calculate which photo is currently in view
+                const newIndex = Math.round(scrollTop / containerHeight);
+                const clampedIndex = Math.max(0, Math.min(newIndex, sortedPhotos.length - 1));
+                
+                console.log('Calculated new index:', newIndex, 'clamped:', clampedIndex);
+                
                 if (clampedIndex !== currentPhotoIndex) {
+                  console.log('Index changed from', currentPhotoIndex, 'to', clampedIndex);
                   setCurrentPhotoIndex(clampedIndex);
+                  
+                  // Update map center to current photo's location
+                  const currentPhotoLocation = sortedPhotos[clampedIndex]?.location;
+                  if (currentPhotoLocation) {
+                    console.log('Updating map to location:', currentPhotoLocation.name, currentPhotoLocation.latitude, currentPhotoLocation.longitude);
+                    
+                    // Update state for React component
+                    setMapCenter({
+                      centerLatitude: currentPhotoLocation.latitude,
+                      centerLongitude: currentPhotoLocation.longitude,
+                      latitudeDelta: 0.005,
+                      longitudeDelta: 0.005,
+                    });
+                    
+                    // Also try to update the map directly via MapKit JS API
+                    if (mapRef.current && typeof window !== 'undefined' && typeof mapkit !== 'undefined') {
+                      try {
+                        const coordinate = new mapkit.Coordinate(currentPhotoLocation.latitude, currentPhotoLocation.longitude);
+                        const span = new mapkit.CoordinateSpan(0.005, 0.005);
+                        const region = new mapkit.CoordinateRegion(coordinate, span);
+                        console.log('🗺️ Directly updating map via MapKit API');
+                        mapRef.current.setRegionAnimated(region, true);
+                      } catch (e) {
+                        console.log('MapKit API update failed:', e);
+                      }
+                    }
+                  }
                 }
               }
             }}
           >
-            {selectedLocation?.photos.map((photo, index) => (
-              <div key={photo.id} className="h-screen flex items-center justify-center p-8">
+            {sortedPhotos.map((item, index) => (
+              <div key={item.photo.id} className="h-screen flex items-center justify-center p-8">
                 <div className="max-w-4xl w-full h-full flex items-center justify-center">
                   <img
-                    src={photo.src}
-                    alt={photo.alt}
+                    src={item.photo.src}
+                    alt={item.photo.alt}
                     className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" font-size="16" fill="%236b7280">Photo not available</text></svg>';
@@ -250,12 +341,7 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
         <Map
           ref={mapRef}
           token={MAPKIT_JS_TOKEN}
-          initialRegion={{
-            centerLatitude: 40.7829,
-            centerLongitude: -74.0059,
-            latitudeDelta: 50,
-            longitudeDelta: 50,
-          }}
+          region={mapCenter}
           onMapReady={(map) => {
             mapRef.current = map;
             console.log('Map ready:', map);
