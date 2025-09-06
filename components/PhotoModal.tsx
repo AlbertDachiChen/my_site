@@ -34,31 +34,14 @@ export default function PhotoModal({ location, isOpen, onClose }: PhotoModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex">
-      {/* Left side - Map space (hidden on mobile) */}
-      <div className="hidden lg:block lg:w-1/2"></div>
-      
-      {/* Right side - Photo modal */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
-        <div className="max-w-3xl w-full max-h-full flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 text-white">
-          <div className="flex items-center gap-3">
-            <FaMapMarkerAlt className="text-claude-orange" />
-            <div>
-              <h2 className="text-xl font-semibold">{location.name}</h2>
-              {location.visitDate && (
-                <div className="flex items-center gap-1 text-sm text-gray-300">
-                  <FaCalendar className="text-xs" />
-                  <span>{new Date(location.visitDate).toLocaleDateString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
+    <div className="fixed right-0 top-0 h-full w-full lg:w-1/2 bg-white z-40 shadow-xl">
+      <div className="h-full flex flex-col p-6">
+        <div className="max-w-full w-full max-h-full flex flex-col h-full">
+        {/* Header - Just close button */}
+        <div className="flex justify-end mb-4">
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-claude-text"
           >
             <FaTimes className="text-xl" />
           </button>
@@ -85,13 +68,13 @@ export default function PhotoModal({ location, isOpen, onClose }: PhotoModalProp
               <>
                 <button
                   onClick={prevPhoto}
-                  className="absolute left-4 p-3 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full transition-colors"
+                  className="absolute left-4 p-3 bg-white bg-opacity-80 hover:bg-opacity-100 text-claude-text rounded-full transition-colors shadow-lg"
                 >
                   <FaChevronLeft />
                 </button>
                 <button
                   onClick={nextPhoto}
-                  className="absolute right-4 p-3 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full transition-colors"
+                  className="absolute right-4 p-3 bg-white bg-opacity-80 hover:bg-opacity-100 text-claude-text rounded-full transition-colors shadow-lg"
                 >
                   <FaChevronRight />
                 </button>
@@ -100,25 +83,13 @@ export default function PhotoModal({ location, isOpen, onClose }: PhotoModalProp
 
             {/* Photo Counter */}
             {location.photos.length > 1 && (
-              <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+              <div className="absolute top-4 right-4 bg-white bg-opacity-90 text-claude-text px-3 py-1 rounded-full text-sm shadow-lg">
                 {currentPhotoIndex + 1} / {location.photos.length}
               </div>
             )}
           </div>
         </div>
 
-        {/* Photo Info */}
-        <div className="mt-4 text-white">
-          <h3 className="text-lg font-semibold mb-1">{currentPhoto.title || currentPhoto.alt}</h3>
-          {currentPhoto.description && (
-            <p className="text-gray-300 mb-2">{currentPhoto.description}</p>
-          )}
-          {currentPhoto.dateTaken && (
-            <p className="text-sm text-gray-400">
-              Taken on {new Date(currentPhoto.dateTaken).toLocaleDateString()}
-            </p>
-          )}
-        </div>
 
         {/* Thumbnail Navigation */}
         {location.photos.length > 1 && (
