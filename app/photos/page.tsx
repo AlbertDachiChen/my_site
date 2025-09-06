@@ -1,4 +1,5 @@
 import Navigation from '@/components/Navigation'
+import InteractivePhotoMap from '@/components/InteractivePhotoMap'
 
 export default function Photos() {
   return (
@@ -7,21 +8,17 @@ export default function Photos() {
       
       <div className="pt-24 pb-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold text-claude-text mb-6">
               Photos
             </h1>
             <p className="text-xl text-claude-text-light max-w-3xl mx-auto">
-              Coming soon! I'll be sharing my photography here.
+              Explore my photography through an interactive map. Click on the red markers 
+              to view photos from different locations around the world.
             </p>
           </div>
 
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl mb-4">📸</div>
-              <p className="text-claude-text-light">Photo gallery coming soon</p>
-            </div>
-          </div>
+          <InteractivePhotoMap />
         </div>
       </div>
     </main>
