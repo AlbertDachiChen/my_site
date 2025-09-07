@@ -86,7 +86,8 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
         console.log('Map reference available:', mapRef.current);
         
         // Check if mapkit global is available
-        if (typeof window !== 'undefined' && typeof mapkit !== 'undefined') {
+        if (typeof window !== 'undefined' && typeof window.mapkit !== 'undefined') {
+          const { mapkit } = window;
           const coordinate = new mapkit.Coordinate(location.latitude, location.longitude);
           const span = new mapkit.CoordinateSpan(0.005, 0.005);
           const region = new mapkit.CoordinateRegion(coordinate, span);
@@ -186,14 +187,14 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
             <Map
               ref={mapRef}
               token={MAPKIT_JS_TOKEN}
-              region={mapCenter}
-              onMapReady={(map) => {
-                mapRef.current = map;
-                console.log('Map ready:', map);
+              initialRegion={mapCenter}
+              onLoad={() => {
+                console.log('Map loaded:', mapRef.current);
                 
-                // Add event listeners for marker clicks using MapKit JS directly
-                map.addEventListener('select', (event) => {
-                  console.log('Map select event:', event);
+                // Add event listeners for marker clicks using MapKit JS directly  
+                if (mapRef.current) {
+                  mapRef.current.addEventListener('select', (event: any) => {
+                    console.log('Map select event:', event);
                   if (event.target && event.target.coordinate) {
                     const clickedCoord = event.target.coordinate;
                     console.log('Clicked coordinate:', clickedCoord);
@@ -210,8 +211,8 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                     }
                   }
                 });
+                }
               }}
-              className="w-full h-full"
             >
               {photoLocations.map((location) => (
                 <Marker
@@ -222,10 +223,6 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                     console.log('Marker onSelect fired!');
                     handleMarkerClick(location);
                   }}
-                  onClick={() => {
-                    console.log('Marker onClick fired!');
-                    handleMarkerClick(location);
-                  }}
                   color={
                     // Highlight the marker for the current photo being viewed
                     sortedPhotos.length > 0 && sortedPhotos[currentPhotoIndex]?.location.id === location.id 
@@ -234,7 +231,6 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                       ? "orange" 
                       : "red"
                   }
-                  size="small"
                   glyphColor="transparent"
                 />
               ))}
@@ -301,7 +297,8 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                     });
                     
                     // Also try to update the map directly via MapKit JS API
-                    if (mapRef.current && typeof window !== 'undefined' && typeof mapkit !== 'undefined') {
+                    if (mapRef.current && typeof window !== 'undefined' && typeof window.mapkit !== 'undefined') {
+                      const { mapkit } = window;
                       try {
                         const coordinate = new mapkit.Coordinate(currentPhotoLocation.latitude, currentPhotoLocation.longitude);
                         const span = new mapkit.CoordinateSpan(0.005, 0.005);
@@ -341,14 +338,14 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
         <Map
           ref={mapRef}
           token={MAPKIT_JS_TOKEN}
-          region={mapCenter}
-          onMapReady={(map) => {
-            mapRef.current = map;
-            console.log('Map ready:', map);
+          initialRegion={mapCenter}
+          onLoad={() => {
+            console.log('Map loaded:', mapRef.current);
             
             // Add event listeners for marker clicks using MapKit JS directly
-            map.addEventListener('select', (event) => {
-              console.log('Map select event:', event);
+            if (mapRef.current) {
+              mapRef.current.addEventListener('select', (event: any) => {
+                console.log('Map select event:', event);
               if (event.target && event.target.coordinate) {
                 const clickedCoord = event.target.coordinate;
                 console.log('Clicked coordinate:', clickedCoord);
@@ -364,9 +361,9 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                   handleMarkerClick(matchedLocation);
                 }
               }
-            });
+              });
+            }
           }}
-          className="w-full h-full"
         >
           {photoLocations.map((location) => (
             <Marker
@@ -377,12 +374,7 @@ export default function InteractivePhotoMap({ className, onPhotoViewModeChange }
                 console.log('Marker onSelect fired!');
                 handleMarkerClick(location);
               }}
-              onClick={() => {
-                console.log('Marker onClick fired!');
-                handleMarkerClick(location);
-              }}
               color="red"
-              size="small"
               glyphColor="transparent"
             />
           ))}
