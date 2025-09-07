@@ -56,9 +56,16 @@ export default function PhotoModal({ location, isOpen, onClose }: PhotoModalProp
                 src={currentPhoto.src}
                 alt={currentPhoto.alt}
                 className="max-w-full max-h-full object-contain"
+                loading="lazy"
                 onError={(e) => {
-                  // Fallback for missing images
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" font-size="16" fill="%236b7280">Photo not available</text></svg>';
+                  // Try thumbnail if main image fails and it's a Google Drive photo
+                  const img = e.target as HTMLImageElement;
+                  if (currentPhoto.thumbnail && img.src !== currentPhoto.thumbnail) {
+                    img.src = currentPhoto.thumbnail;
+                  } else {
+                    // Final fallback
+                    img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" font-size="16" fill="%236b7280">Photo not available</text></svg>';
+                  }
                 }}
               />
             </div>

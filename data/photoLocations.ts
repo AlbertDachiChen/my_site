@@ -15,6 +15,11 @@ export interface Photo {
   title?: string;
   description?: string;
   dateTaken?: string;
+  thumbnail?: string;
+  originalName?: string;
+  size?: string;
+  mimeType?: string;
+  driveFileId?: string; // Google Drive file ID for dynamic loading
 }
 
 // Your photo locations - add your actual travel photos here
