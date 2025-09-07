@@ -72,13 +72,6 @@ export default function Navigation() {
             >
               Technicals
             </Link>
-            <Link 
-              href="/photos" 
-              className="block px-4 py-2 text-claude-text-light hover:text-claude-text hover:bg-claude-beige rounded transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Photos
-            </Link>
           </div>
         </div>
       </div>
