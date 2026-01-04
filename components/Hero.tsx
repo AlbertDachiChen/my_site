@@ -12,7 +12,11 @@ export default function Hero() {
         
         
         <p className="text-xl md:text-2xl text-claude-text-light mb-12 max-w-3xl mx-auto leading-relaxed">
-          TBD
+          Learn by doing.<br />
+          How to work with AI.<br />
+          How AI works.<br />
+          What to build with AI.<br />
+          Build Systems.
         </p>
         
         <div className="flex items-center justify-center gap-6">
