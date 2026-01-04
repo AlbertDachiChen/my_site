@@ -28,9 +28,6 @@ export default function Navigation() {
             <Link href="/technicals" className="text-claude-text-light hover:text-claude-text transition-colors">
               Technicals
             </Link>
-            <Link href="/photos" className="text-claude-text-light hover:text-claude-text transition-colors">
-              Photos
-            </Link>
           </div>
 
           <button 
